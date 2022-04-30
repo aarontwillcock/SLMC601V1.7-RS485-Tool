@@ -1,7 +1,7 @@
+#Import files
 import sys
 import serial
 import SLMC601V17_RS485_COM_Frames as SLMC_Frames
-
 
 #Determine determine which port was provided
 PORT = sys.argv[1]
