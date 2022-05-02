@@ -72,7 +72,7 @@ def parseBytes(numBytesToRead):
 
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_AAB)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_AAB)
-                    if(dataSum - 2*SLMC_Frames.BMS_RET_AAB[-1]==0):
+                    if(dataSum & int("1111",2) == 0):
                         print(SLMC_Frames.BMS_RET_AAB)
                     else:
                         print("Bad CRC")
@@ -84,7 +84,7 @@ def parseBytes(numBytesToRead):
 
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_VTCP)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_VTCP)
-                    if(dataSum - 2*SLMC_Frames.BMS_RET_VTCP[-1]):
+                    if(dataSum & int("1111",2) == 0):
                         print(SLMC_Frames.BMS_RET_VTCP)
                     else:
                         print("Bad CRC")
@@ -96,7 +96,7 @@ def parseBytes(numBytesToRead):
 
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_CBR)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_CBR)
-                    if(dataSum - 2*SLMC_Frames.BMS_RET_CBR[-1]):
+                    if(dataSum & int("1111",2) == 0):
                         print(SLMC_Frames.BMS_RET_CBR)
                     else:
                         print("Bad CRC")
