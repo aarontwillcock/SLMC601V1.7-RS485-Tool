@@ -17,7 +17,7 @@ BMS_RET_AAB =   [
                             int("00",16),
                             int("00",16),
                             int("00",16),
-                            int("CC",16)    #CRC
+                            int("00",16)    #CRC
                         ]
 #  Voltage Temperature, Current, Power
 #      HOST SEND
@@ -77,7 +77,7 @@ BMS_RET_VTCP = [
                             int("00",16),
                             int("00",16),
                             int("00",16),
-                            int("CC",16)    #CRC
+                            int("00",16)    #CRC
                         ]
 #  Chip Balancer
 #      HOST SEND
@@ -107,7 +107,7 @@ BMS_RET_CBR =  [
                             int("00",16),
                             int("00",16),
                             int("00",16),
-                            int("CC",16)    #CRC
+                            int("00",16)    #CRC
                         ]
 #  Discharge, Charge, Alert, Sleep
 HST_REQ_DCAS =  [
