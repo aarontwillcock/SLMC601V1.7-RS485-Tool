@@ -67,6 +67,8 @@ where `#` is the ID of the RS485 USB device and `X` indicates a command from the
 | 5 | Clear BQ769 chip alarm |
 | 6 | Enter BQ769 sleep state |
 
+Note: "Discharging" state enables undervoltage protection, "charging" state enables overvoltage protection
+
 ### Return:
 
 None. This function does not return any data.
