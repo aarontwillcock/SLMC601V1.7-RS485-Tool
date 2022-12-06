@@ -14,10 +14,10 @@ BMS_RET_AAB =   [
                             int("11",16),  #Device Address
                             int("01",16),  #Function Code
                             int("03",16),  #Data Length
-                            int("00",16),
-                            int("00",16),
-                            int("00",16),
-                            int("00",16)    #CRC
+                            int("00",16),  #BQ76xx Amplitude Value (0x00-0x1F) Gain multiples of current detection, detailed on page 40 of bq769xx manual - High byte first (MSB)
+                            int("00",16),  #BQ76xx Amplitude Value (0x00-0x1F) Gain multiples of current detection, detailed on page 40 of bq769xx manual - High byte first (MSB)
+                            int("00",16),  #BQ76xx Bias Value (0x00-0x1F) Gain multiples of current detection, detailed on page 41 of bq769xx manual
+                            int("00",16)   #CRC
                         ]
 #  Voltage Temperature, Current, Power
 #      HOST SEND
