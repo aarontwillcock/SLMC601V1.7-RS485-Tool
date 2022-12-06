@@ -36,7 +36,6 @@ if(command == 1 or command == 2 or command == 3):
         dataSum = fullFrameSum - SLMC_Frames.BMS_RET_VTCP[-1]
         CRC = int("10000",2) - (dataSum & int("1111",2))
         SLMC_Frames.BMS_RET_VTCP[-1] = CRC
-        dataToSend = bytearray(SLMC_Frames.BMS_RET_VTCP)
         dataToSend = bytearray(SLMC_Frames.HST_REQ_VTCP)
     if(command == 3):
         fullFrameSum = sum(SLMC_Frames.BMS_RET_CBR)
@@ -74,6 +73,62 @@ dataSum = 0
 
 readState = "seekA8"
 recvBytes = [0]
+
+def printFrameWithDescription(BMS_RET_FRAME):
+
+    if BMS_RET_FRAME == SLMC_Frames.BMS_RET_AAB:
+
+        bq76xx_amplitude = (SLMC_Frames.BMS_RET_AAB[4]<<8) + SLMC_Frames.BMS_RET_AAB[5]
+        print("BQ76XX Amplitude:",bq76xx_amplitude)
+
+        bq76xx_bias = SLMC_Frames.BMS_RET_AAB[6]
+        print("BQ76xx Bias (ADC Offset):",bq76xx_bias)
+    
+    if BMS_RET_FRAME == SLMC_Frames.BMS_RET_VTCP:
+
+        cellString = [0]*15
+
+        cellString[0] =  (SLMC_Frames.BMS_RET_VTCP[4]<<8) + SLMC_Frames.BMS_RET_VTCP[5]
+        cellString[1] =  (SLMC_Frames.BMS_RET_VTCP[6]<<8) + SLMC_Frames.BMS_RET_VTCP[7]
+        cellString[2] =  (SLMC_Frames.BMS_RET_VTCP[8]<<8) + SLMC_Frames.BMS_RET_VTCP[9]
+        cellString[3] =  (SLMC_Frames.BMS_RET_VTCP[10]<<8) + SLMC_Frames.BMS_RET_VTCP[11]
+        cellString[4] =  (SLMC_Frames.BMS_RET_VTCP[12]<<8) + SLMC_Frames.BMS_RET_VTCP[13]
+        cellString[5] =  (SLMC_Frames.BMS_RET_VTCP[14]<<8) + SLMC_Frames.BMS_RET_VTCP[15]
+        cellString[6] =  (SLMC_Frames.BMS_RET_VTCP[16]<<8) + SLMC_Frames.BMS_RET_VTCP[17]
+        cellString[7] =  (SLMC_Frames.BMS_RET_VTCP[18]<<8) + SLMC_Frames.BMS_RET_VTCP[19]
+        cellString[8] =  (SLMC_Frames.BMS_RET_VTCP[20]<<8) + SLMC_Frames.BMS_RET_VTCP[21]
+        cellString[9] =  (SLMC_Frames.BMS_RET_VTCP[22]<<8) + SLMC_Frames.BMS_RET_VTCP[23]
+        cellString[10] = (SLMC_Frames.BMS_RET_VTCP[24]<<8) + SLMC_Frames.BMS_RET_VTCP[25]
+        cellString[11] = (SLMC_Frames.BMS_RET_VTCP[26]<<8) + SLMC_Frames.BMS_RET_VTCP[27]
+        cellString[12] = (SLMC_Frames.BMS_RET_VTCP[28]<<8) + SLMC_Frames.BMS_RET_VTCP[29]
+        cellString[13] = (SLMC_Frames.BMS_RET_VTCP[30]<<8) + SLMC_Frames.BMS_RET_VTCP[31]
+        cellString[14] = (SLMC_Frames.BMS_RET_VTCP[32]<<8) + SLMC_Frames.BMS_RET_VTCP[33]
+
+        for i in range(len(cellString)):
+            output = "String "+str(i).zfill(2)+" : "+format(cellString[i]*0.001,'.3f')+"V"
+            print(output)
+
+        battery_voltage = (SLMC_Frames.BMS_RET_VTCP[34]<<8) + SLMC_Frames.BMS_RET_VTCP[35]
+        output = "V Batt : " + format(battery_voltage*0.001,'.3f') + "V"
+        print(output)
+
+        temps = [-1]*3
+
+        temps[0] = (SLMC_Frames.BMS_RET_VTCP[36]<<8) + SLMC_Frames.BMS_RET_VTCP[37]
+        temps[1] = (SLMC_Frames.BMS_RET_VTCP[38]<<8) + SLMC_Frames.BMS_RET_VTCP[39]
+        temps[2] = (SLMC_Frames.BMS_RET_VTCP[40]<<8) + SLMC_Frames.BMS_RET_VTCP[41]
+
+        for i in range(len(temps)):
+            output = "Temp "+str(i).zfill(2)+" : "+format(temps[i]*0.1,'.1f')+" deg C"
+            print(output)
+
+        battery_current = (SLMC_Frames.BMS_RET_VTCP[42]<<8) + SLMC_Frames.BMS_RET_VTCP[43]
+        output = "I Batt : " + format(battery_current*0.01,'.2f') + "A"
+        print(output)
+
+        system_state_of_charge = (SLMC_Frames.BMS_RET_VTCP[44]<<8) + SLMC_Frames.BMS_RET_VTCP[45]
+        output = "SOC : " + format(system_state_of_charge*0.1,'.1f') + "%"
+        print(output)
 
 def parseBytes(numBytesToRead):
 
@@ -126,6 +181,7 @@ def parseBytes(numBytesToRead):
                     dataSum = sum(SLMC_Frames.BMS_RET_AAB)
                     if(dataSum & int("1111",2) == 0):
                         print(SLMC_Frames.BMS_RET_AAB)
+                        printFrameWithDescription(SLMC_Frames.BMS_RET_AAB)
                     else:
                         print("Bad CRC")
                     readState = "End"
@@ -138,6 +194,7 @@ def parseBytes(numBytesToRead):
                     dataSum = sum(SLMC_Frames.BMS_RET_VTCP)
                     if(dataSum & int("1111",2) == 0):
                         print(SLMC_Frames.BMS_RET_VTCP)
+                        printFrameWithDescription(SLMC_Frames.BMS_RET_VTCP)
                     else:
                         print("Bad CRC")
                     readState = "End"
