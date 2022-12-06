@@ -2,7 +2,11 @@
 import sys
 import serial
 import SLMC601V17_RS485_COM_Frames as SLMC_Frames
+import SLMC601V17_RS485_BQ769XX_CONFIG_LABELS as SLMC_CFG_LABELS
 from time import time
+
+#Setup Labels
+i_slmc_cfg_labels = SLMC_CFG_LABELS.SLMC601V17_RS485_BQ769XX_CONFIG_LABELS()
 
 #Determine determine which port was provided
 PORT = sys.argv[1]
@@ -53,11 +57,11 @@ if(command == 4):
     DCAS_REQ_DATA_ARG = int(sys.argv[3])
 
     #Change DCAS Data List
-    SLMC_Frames.HST_REQ_DCAS[4] = DCAS_REQ_DATA_ARG
+    SLMC_Frames.HST_REQ_DCAS[4] = int(DCAS_REQ_DATA_ARG)
 
     fullFrameSum = sum(SLMC_Frames.HST_REQ_DCAS)
     dataSum = fullFrameSum - SLMC_Frames.HST_REQ_DCAS[-1]
-    CRC = int("10000",2) - (dataSum & int("1111",2))
+    CRC = int("100000000",2) - (dataSum & int("11111111",2))
     SLMC_Frames.HST_REQ_DCAS[-1] = CRC
 
     #Create byte array
@@ -73,6 +77,27 @@ dataSum = 0
 
 readState = "seekA8"
 recvBytes = [0]
+
+def printConfigModule(module,moduleLabels):
+
+    labelOutput = ""
+    valueOutput = ""
+
+    for i in range(len(moduleLabels)):
+        labelOutput += "[" + moduleLabels[i] + "]"
+        labelLength = len(moduleLabels[i])
+        if module & pow(2,(7-i)) :
+            valueOutput += "[" + "\u2588"*labelLength + "]"
+        else:
+            valueOutput += "[" + " "*labelLength + "]"
+
+    print("BIT7",end="")
+    print(labelOutput,end="")
+    print("BIT0")
+    print("BIT7",end="")
+    print(valueOutput,end="")
+    print("BIT0")
+    print("")
 
 def printFrameWithDescription(BMS_RET_FRAME):
 
@@ -106,10 +131,14 @@ def printFrameWithDescription(BMS_RET_FRAME):
 
         for i in range(len(cellString)):
             output = "String "+str(i).zfill(2)+" : "+format(cellString[i]*0.001,'.3f')+"V"
-            print(output)
+            if i % 2 == 0:
+                print(output,"  ",end="")
+            else:
+                print(output)
 
+        print("")
         battery_voltage = (SLMC_Frames.BMS_RET_VTCP[34]<<8) + SLMC_Frames.BMS_RET_VTCP[35]
-        output = "V Batt : " + format(battery_voltage*0.001,'.3f') + "V"
+        output = "==> V Batt : " + format(battery_voltage*0.001,'.3f') + "V"
         print(output)
 
         temps = [-1]*3
@@ -129,6 +158,47 @@ def printFrameWithDescription(BMS_RET_FRAME):
         system_state_of_charge = (SLMC_Frames.BMS_RET_VTCP[44]<<8) + SLMC_Frames.BMS_RET_VTCP[45]
         output = "SOC : " + format(system_state_of_charge*0.1,'.1f') + "%"
         print(output)
+
+    if BMS_RET_FRAME == SLMC_Frames.BMS_RET_CBR:
+
+        bq76xx_system_status = SLMC_Frames.BMS_RET_CBR[4]
+        bq76xx_cell_balance = [-1]*3
+        for i in range(len(bq76xx_cell_balance)):
+            bq76xx_cell_balance[i] = SLMC_Frames.BMS_RET_CBR[5+i]
+        bq76xx_system_control = [-1]*2
+        for i in range(len(bq76xx_system_control)):
+            bq76xx_system_control[i] = SLMC_Frames.BMS_RET_CBR[8+i]
+        bq76xx_protection = [-1]*3
+        for i in range(len(bq76xx_protection)):
+            bq76xx_protection[i] = SLMC_Frames.BMS_RET_CBR[10+i]
+        bq76xx_over_voltage_trip = SLMC_Frames.BMS_RET_CBR[13]
+        bq76xx_under_voltage_trip = SLMC_Frames.BMS_RET_CBR[14]
+        bq76xx_configuration = SLMC_Frames.BMS_RET_CBR[15]
+        
+        print("System Status:")
+        printConfigModule(bq76xx_system_status,i_slmc_cfg_labels.bq769xx_labels_systemStatus)
+        print("Cell Balance 1:")
+        printConfigModule(bq76xx_cell_balance[0],i_slmc_cfg_labels.bq769xx_labels_cellBalance1)
+        print("Cell Balance 2:")
+        printConfigModule(bq76xx_cell_balance[1],i_slmc_cfg_labels.bq769xx_labels_cellBalance2)
+        print("Cell Balance 3:")
+        printConfigModule(bq76xx_cell_balance[2],i_slmc_cfg_labels.bq769xx_labels_cellBalance3)
+        print("System Control 1:")
+        printConfigModule(bq76xx_system_control[0],i_slmc_cfg_labels.bq769xx_labels_systemControl1)
+        print("System Control 2:")
+        printConfigModule(bq76xx_system_control[1],i_slmc_cfg_labels.bq769xx_labels_systemControl2)
+        print("Protect 1:")
+        printConfigModule(bq76xx_protection[0],i_slmc_cfg_labels.bq769xx_labels_protect1)
+        print("Protect 2:")
+        printConfigModule(bq76xx_protection[1],i_slmc_cfg_labels.bq769xx_labels_protect2)
+        print("Protect 3:")
+        printConfigModule(bq76xx_protection[2],i_slmc_cfg_labels.bq769xx_labels_protect3)
+        print("OV Trip:")
+        printConfigModule(bq76xx_over_voltage_trip,i_slmc_cfg_labels.bq769xx_labels_OV_TRIP)
+        print("UV Trip:")
+        printConfigModule(bq76xx_under_voltage_trip,i_slmc_cfg_labels.bq769xx_labels_UV_TRIP)
+        print("CcConfig:")
+        printConfigModule(bq76xx_configuration,i_slmc_cfg_labels.bq769xx_labels_ccConfig)
 
 def parseBytes(numBytesToRead):
 
@@ -179,7 +249,7 @@ def parseBytes(numBytesToRead):
 
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_AAB)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_AAB)
-                    if(dataSum & int("1111",2) == 0):
+                    if(dataSum & int("11111111",2) == 0):
                         print(SLMC_Frames.BMS_RET_AAB)
                         printFrameWithDescription(SLMC_Frames.BMS_RET_AAB)
                     else:
@@ -192,7 +262,8 @@ def parseBytes(numBytesToRead):
 
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_VTCP)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_VTCP)
-                    if(dataSum & int("1111",2) == 0):
+                    print("DS:",dataSum)
+                    if(dataSum & int("11111111",2) == 0):
                         print(SLMC_Frames.BMS_RET_VTCP)
                         printFrameWithDescription(SLMC_Frames.BMS_RET_VTCP)
                     else:
@@ -205,8 +276,8 @@ def parseBytes(numBytesToRead):
 
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_CBR)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_CBR)
-                    if(dataSum & int("1111",2) == 0):
-                        print(SLMC_Frames.BMS_RET_CBR)
+                    if(dataSum & int("11111111",2) == 0):
+                        printFrameWithDescription(SLMC_Frames.BMS_RET_CBR)
                     else:
                         print("Bad CRC")
                     readState = "End"
