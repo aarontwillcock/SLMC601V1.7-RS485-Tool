@@ -23,25 +23,36 @@ usbrs485 = serial.Serial(PORT,baudrate=115200)
 usbrs485.timeout = 0.1
 
 #Get command requested
-command = int(sys.argv[2])
+command = sys.argv[2]
+try:
+    int_command = int(command)
+except:
+    int_command = 0
 
 #Handle command based on command
-if(command == 1 or command == 2 or command == 3):
+if(int_command):
+
+    #Check for verbose command
+
+    verbose_command = 0
+    if len(sys.argv) > 3:
+        if(sys.argv[3] == "-v"):
+            verbose_command = 1
 
     #Create byte array
-    if(command == 1):
+    if(int_command == 1):
         fullFrameSum = sum(SLMC_Frames.HST_REQ_DCAS)
         dataSum = fullFrameSum - SLMC_Frames.HST_REQ_DCAS[-1]
         CRC = int("10000",2) - (dataSum & int("1111",2))
         SLMC_Frames.HST_REQ_DCAS[-1] = CRC
         dataToSend = bytearray(SLMC_Frames.HST_REQ_AAB)
-    if(command == 2):
+    if(int_command == 2):
         fullFrameSum = sum(SLMC_Frames.BMS_RET_VTCP)
         dataSum = fullFrameSum - SLMC_Frames.BMS_RET_VTCP[-1]
         CRC = int("10000",2) - (dataSum & int("1111",2))
         SLMC_Frames.BMS_RET_VTCP[-1] = CRC
         dataToSend = bytearray(SLMC_Frames.HST_REQ_VTCP)
-    if(command == 3):
+    if(int_command == 3):
         fullFrameSum = sum(SLMC_Frames.BMS_RET_CBR)
         dataSum = fullFrameSum - SLMC_Frames.BMS_RET_CBR[-1]
         CRC = int("10000",2) - (dataSum & int("1111",2))
@@ -51,10 +62,33 @@ if(command == 1 or command == 2 or command == 3):
     #Write data
     usbrs485.write(dataToSend)
 
-if(command == 4):
+elif(int_command == 4 or command == "CHARGE" or command == "DISCHARGE"):
 
-    #Get data argument for byte array
-    DCAS_REQ_DATA_ARG = int(sys.argv[3])
+    if(int_command):
+
+        #Get data argument for byte array
+        DCAS_REQ_DATA_ARG = int(sys.argv[3])
+
+    else:
+
+        #Get text argument for on or off
+        on_off_command = sys.argv[3]
+
+        on_off_upper = on_off_command.upper()
+
+        if on_off_upper == "ON":
+
+            if command == "DISCHARGE":
+                DCAS_REQ_DATA_ARG = 1   #Discharge on (circuit CLOSED)
+            else:
+                DCAS_REQ_DATA_ARG = 3   #Charge on (circuit CLOSED)
+        
+        if on_off_upper == "OFF":
+
+            if command == "DISCHARGE":
+                DCAS_REQ_DATA_ARG = 2   #Discharge off (circuit OPEN)
+            else:
+                DCAS_REQ_DATA_ARG = 4   #Charge on (circuit OPEN)
 
     #Change DCAS Data List
     SLMC_Frames.HST_REQ_DCAS[4] = int(DCAS_REQ_DATA_ARG)
@@ -70,6 +104,9 @@ if(command == 4):
     #Write data
     usbrs485.write(dataToSend)
 
+else:
+    print("Invalid Command")
+    exit()
 
 #Sums
 bytesReadCounter = 0
@@ -251,7 +288,8 @@ def parseBytes(numBytesToRead):
                     dataSum = sum(SLMC_Frames.BMS_RET_AAB)
                     if(dataSum & int("11111111",2) == 0):
                         print(SLMC_Frames.BMS_RET_AAB)
-                        printFrameWithDescription(SLMC_Frames.BMS_RET_AAB)
+                        if verbose_command:
+                            printFrameWithDescription(SLMC_Frames.BMS_RET_AAB)
                     else:
                         print("Bad CRC")
                     readState = "End"
@@ -262,10 +300,10 @@ def parseBytes(numBytesToRead):
 
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_VTCP)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_VTCP)
-                    print("DS:",dataSum)
                     if(dataSum & int("11111111",2) == 0):
                         print(SLMC_Frames.BMS_RET_VTCP)
-                        printFrameWithDescription(SLMC_Frames.BMS_RET_VTCP)
+                        if verbose_command:
+                            printFrameWithDescription(SLMC_Frames.BMS_RET_VTCP)
                     else:
                         print("Bad CRC")
                     readState = "End"
@@ -277,7 +315,8 @@ def parseBytes(numBytesToRead):
                 if(bytesReadCounter >= len(SLMC_Frames.BMS_RET_CBR)-3):
                     dataSum = sum(SLMC_Frames.BMS_RET_CBR)
                     if(dataSum & int("11111111",2) == 0):
-                        printFrameWithDescription(SLMC_Frames.BMS_RET_CBR)
+                        if verbose_command:
+                            printFrameWithDescription(SLMC_Frames.BMS_RET_CBR)
                     else:
                         print("Bad CRC")
                     readState = "End"
