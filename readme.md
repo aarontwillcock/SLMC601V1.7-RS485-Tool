@@ -1,5 +1,60 @@
 # SLMC601 V1.7 Python USB-RS485 Interface
 
+## General Command Structure
+
+### Integer-Based Commands
+```
+python3 SLMC601V17_RS485_COM_TX /dev/ttyUSB# X Y -v
+```
+`#` = The desired RS485-USB device's # - found by calling `ls /dev/etc/ttyUSB*`
+`X` = SLMC command number:
+```
+1 - Amplitude and Bias (AAB)
+2 - Voltage, Temperature, Current, and Percent State of Charge (VTCP)
+3 - Cell Balance and Registers (CBR)
+4 - Discharge, Charge, Alarm, and SLeep (DCAS)
+``` 
+`Y` = SLMC DCAS Sub-Command should __ONLY__ be used when `X = 4` :
+```
+1 - Discharge Closed (ON)
+2 - Discharge Open (OFF)
+3 - Charge Closed (ON)
+4 - Charge Open (ON)
+5 - Clear BQ769 chip alarm
+6 - Enter BQ769 sleep state
+```
+`-v` = Verbose output of received data (i.e. formatted, textual output)
+### Optional Text-Based Commands
+
+This interface allows text-based DCAS commands as follows:
+```
+python3 SLMC601V17_RS485_COM_TX /dev/ttyUSB# X Y
+```
+`X` = SLMC text command:
+```
+CHARGE - DCAS Charge Command
+DISCHARGE - DCAS Discharge Command
+``` 
+requires the following `Y` command.
+
+`Y` = SLMC command number:
+```
+ON - Closes (enables) the circuit
+OFF - Opens (disables) the circuit
+```
+
+Examples:
+```
+python3 SLMC601V17_RS485_COM_TX /dev/ttyUSB2 CHARGE ON
+```
+uses `/dev/ttyUSB2` to turn `ON` the `CHARGE` circuit and enable battery charging.
+
+```
+python3 SLMC601V17_RS485_COM_TX /dev/ttyUSB5 DISCHARGE OFF
+```
+uses `/dev/ttyUSB5` to turn `OFF` the `DISCHARGE` circuit and prevent battery discharge.
+
+
 ## Amplitude and Bias (AAB)
 To request Amplitude and Bias Frame:
 ```cli
@@ -37,7 +92,7 @@ Example:
 ## Cell Balancing Registers
 To request cell balance registers:
 ```cli
-python3 SLMC601V17_RS485_COM_TX /dev/ttyUSB# 2
+python3 SLMC601V17_RS485_COM_TX /dev/ttyUSB# 3
 ```
 where `#` is the ID of the RS485 USB device.
 
